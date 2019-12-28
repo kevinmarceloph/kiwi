@@ -1,4 +1,4 @@
-import { IAuthorize, IAction, IRouter, IActionExecutor, IParam, IMiddleware } from './types/metadata.types';
+import { IAuthorize, IAction, IRouter, IActionExecutor, IParam, IMiddleware, IErrorMiddleware } from './types/metadata.types';
 import { forEach, isNil, find, filter, drop, findIndex, orderBy, replace, split } from 'lodash';
 import { Metadata } from './metadata';
 import { IKiwiOptions } from '../types/types';
@@ -47,6 +47,12 @@ export class KiwiMetadataStorage {
         if (!(global as any).metadata)
             (global as any).metadata = new Metadata();
         return (global as any).metadata.middlewaresAfter;
+    };
+
+    public static get middlewaresError(): IErrorMiddleware[] {
+        if (!(global as any).metadata)
+            (global as any).metadata = new Metadata();
+        return (global as any).metadata.middlewaresError;
     };
 
     public static get interceptors(): any[] {

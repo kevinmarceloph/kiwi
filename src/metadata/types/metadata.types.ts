@@ -46,3 +46,8 @@ export interface IMiddleware {
     target: any,
     order?: number
 }
+
+export interface IErrorMiddleware {
+    target: any,
+    order?: number
+}

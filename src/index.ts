@@ -2,7 +2,7 @@ import { IKiwiOptions } from './types/types';
 import * as http from 'http';
 import { isNil, findIndex, forEach, filter } from 'lodash';
 import { KiwiMetadataStorage } from './metadata/metadataStorage';
-import { IActionExecutor, IMiddleware } from './metadata/types/metadata.types';
+import { IActionExecutor, IMiddleware, IErrorMiddleware } from './metadata/types/metadata.types';
 import { CorsMiddleware } from './middlewares/corsMiddlware';
 import { LogMiddleware } from './middlewares/logMiddlware';
 import { DocMiddleware } from './middlewares/docMiddleware';
@@ -122,6 +122,10 @@ export async function processRequest(request: http.IncomingMessage, response: ht
     return response;
   } catch (ex) {
     console.log(`ERROR: ${ex}`);
+    const afterError = await executeErrorMiddlewares(KiwiMetadataStorage.middlewaresError, ex, request, response);
+    if (isNil(afterError)) {
+      return;
+    }
     response.writeHead(500);
     response.end(`Internal error`);
   }
@@ -167,6 +171,23 @@ async function executeMiddlewares(middlewares: Array<IMiddleware>, request: http
       return new Promise((resolve, reject) => {
         const instance: any = getInstance(middleware.target.prototype);
         return instance.execute.apply(instance, [request, response, resolve]);
+      });
+    });
+  });
+  resolver = resolver.then(() => {
+    return true;
+  });
+  const result = await resolver;
+  return result;
+}
+
+async function executeErrorMiddlewares(middlewares: Array<IMiddleware>, error: any, request: http.IncomingMessage, response: http.ServerResponse) {
+  var resolver: any = Promise.resolve();
+  forEach(middlewares, (middleware: IErrorMiddleware) => {
+    resolver = resolver.then(() => {
+      return new Promise((resolve, reject) => {
+        const instance: any = getInstance(middleware.target.prototype);
+        return instance.execute.apply(instance, [error, request, response, resolve]);
       });
     });
   });
